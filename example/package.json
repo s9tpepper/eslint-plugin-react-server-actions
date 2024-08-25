@@ -1,0 +1,20 @@
+{
+  "name": "eslint-react-server-actions-example",
+  "version": "1.0.0",
+  "description": "example of using eslint rule",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "example"
+  ],
+  "author": "Omar Gonzalez <s9tpepper@apache.org>",
+  "license": "MIT",
+  "dependencies": {
+    "eslint": "^9.9.0"
+  },
+  "devDependencies": {
+    "react-server-actions": "file://.."
+  }
+}

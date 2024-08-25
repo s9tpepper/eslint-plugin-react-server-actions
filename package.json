@@ -1,0 +1,59 @@
+{
+  "name": "eslint-plugin-react-server-actions",
+  "version": "0.0.0",
+  "description": "eslint rule for react server actions",
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    "require": "./dist/index.cjs",
+    "import": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "tsup",
+    "lint": "tsc",
+    "version": "changeset version && npm install --lockfile-only",
+    "release": "npm build && changeset publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "eslint-plugin",
+    "eslint",
+    "react",
+    "next.js",
+    "server actions"
+  ],
+  "author": "Omar Gonzalez <s9tpepper@apache.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/roginfarrer/eslint-plugin-react-server-components/issues"
+  },
+  "homepage": "https://github.com/roginfarrer/eslint-plugin-react-server-components#readme",
+  "devDependencies": {
+    "@changesets/cli": "^2.27.7",
+    "@types/eslint": "^9.6.0",
+    "@types/estree": "^1.0.5",
+    "@types/estree-jsx": "^1.0.5",
+    "@types/jest": "^29.5.12",
+    "eslint": "^9.9.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.3.3",
+    "ts-jest": "^29.2.4",
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "debug": "^4.3.6",
+    "eslint-plugin-react": "^7.35.0",
+    "json-circular-stringify": "^1.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
