@@ -1,0 +1,33 @@
+name: Validate
+
+on: # Rebuild any PRs and main branch changes
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@main
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install Dependencies
+        run: npm i
+
+      - name: Build
+        run: npm build
+
+      - name: Lint
+        run: npm lint
+
+      - name: Test
+        run: npm test

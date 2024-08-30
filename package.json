@@ -16,11 +16,11 @@
     "build": "tsup",
     "lint": "tsc",
     "version": "changeset version && npm install --lockfile-only",
-    "release": "npm build && changeset publish"
+    "release": "npm run build && changeset publish"
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git@github.com:s9tpepper/eslint-plugin-react-server-actions.git"
   },
   "keywords": [
     "eslint-plugin",
