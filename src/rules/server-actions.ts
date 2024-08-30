@@ -34,37 +34,64 @@ const meta: Rule.RuleMetaData = {
   },
 }
 
+type FunctionTypes =
+  | 'ArrowFunctionExpression'
+  | 'FunctionExpression'
+  | 'FunctionDeclaration'
+
+const getUseServerErrorMessage = (type: FunctionTypes): string => {
+  let message = 'Function is missing "use server" directive'
+  if (type === 'ArrowFunctionExpression') {
+    message = 'Arrow function expression is missing "use server" directive'
+  } else if (type === 'FunctionExpression') {
+    message = 'Function expression is missing "use server" directive'
+  } else if (type === 'FunctionDeclaration') {
+    message = 'Function declaration is missing "use server" directive'
+  }
+
+  return message
+}
+
 const create = (context: Rule.RuleContext): Rule.RuleListener => {
-  const { id, cwd, options, physicalFilename, filename, sourceCode } = context
+  const __d = debug.extend('create')
+  const { cwd, options, physicalFilename, sourceCode } = context
 
-  // id: react-server-actions/use-server
-  // cwd: /Users/s9tpepper/code/web/eslint-react-server-actions/example
-  // options: [{"actionsDir":["src/actions"]}]
-  // physicalFilename: /Users/s9tpepper/code/web/eslint-react-server-actions/example/src/actions/bad-server-action.js
-  // filename: /Users/s9tpepper/code/web/eslint-react-server-actions/example/src/actions/bad-server-action.js
-  // sourceCode: [object Object]
-
-  console.log(`id: ${id}`)
-  console.log(`cwd: ${cwd}`)
-  console.log(`options: ${JSON.stringify(options)}`)
-  console.log(`physicalFilename: ${physicalFilename}`)
-  console.log(`filename: ${filename}`)
-  console.log(`sourceCode: ${sourceCode}`)
+  __d(`options: ${JSON.stringify(options, null, 2)}`)
+  __d(`cwd: ${cwd}`)
+  __d(`physicalFilename: "${physicalFilename}"`)
 
   // Get directory of server actions
   const serverActionsDirectories = options.map(
     (option) => `${cwd}/${option.actionsDir}`,
   )
+  __d(`serverActionsDirectories: ${serverActionsDirectories}`)
 
   // Check if current file is in server actions directory
   let path = physicalFilename.split('/')
   path.pop()
 
+  const shouldCheckInput = options.some((option) => {
+    __d(`option: ${JSON.stringify(option)}`)
+    const isInput = option.actionsDir.includes('<input>')
+    __d(`isInput: ${isInput}`)
+
+    return isInput
+  })
+  const fileIsInput = physicalFilename === '<input>'
+
+  __d(`path: ${path}`)
+  __d(`fileIsInput': ${fileIsInput}`)
+  __d(`shouldCheckInput: ${shouldCheckInput}`)
+
   const currentFileDirectory = path.join('/')
-  const isServerAction = serverActionsDirectories.includes(currentFileDirectory)
+  const isServerAction =
+    serverActionsDirectories.includes(currentFileDirectory) ||
+    (fileIsInput && shouldCheckInput)
+  __d(`isServerAction: ${isServerAction}`)
 
   let hasTopLevelUseServer = false
   if (isServerAction) {
+    __d('Checking top level...')
     // Check if there is a 'use server' at top of file
     const code = sourceCode
       .getLines()
@@ -73,110 +100,76 @@ const create = (context: Rule.RuleContext): Rule.RuleListener => {
       })
       .filter((line) => line.length > 0)
 
+    __d(`code?.[0]: ${code?.[0]}`)
+
     hasTopLevelUseServer = /^['"]use server['"]/.test(code?.[0])
+    __d(`hasTopLevelUseServer: ${hasTopLevelUseServer}`)
   }
 
   return {
-    // AssignmentExpression(node) {
-    //   console.log('AssignmentExpression: ===============')
-    //   console.log(node)
-    // },
-    //
-    // FunctionExpression(node) {
-    //   console.log('FunctionExpression: ===============')
-    //   console.log(node)
-    // },
-    //
-    // MethodDefinition(node) {
-    //   console.log('MethodDefinition: ===============')
-    //   console.log(node)
-    // },
-    //
-    // ExportSpecifier(node) {
-    //   console.log('ExportSpecifier: ===============')
-    //   console.log(node)
-    // },
-    //
-    // ExpressionStatement(node) {
-    //   console.log('ExpressionStatement: ===============')
-    //   console.log(node)
-    //
-    //   const expression = node.expression as Expression & {
-    //     callee?: Identifier
-    //     arguments?: Array<Expression | SpreadElement>
-    //   }
-    //   if (!expression.callee) {
-    //     return
-    //   }
-    //
-    //   // if (
-    //   //   expression.callee &&
-    //   //   // isClientOnlyHook(expression.callee.name) &&
-    //   //   // Boolean(util.getParentComponent(expression))
-    //   // ) {
-    //   //   instances.push(expression.callee.name)
-    //   //   reportMissingDirective('addUseClientHooks', expression.callee, {
-    //   //     hook: expression.callee.name,
-    //   //   })
-    //   // }
-    // },
-
-    onCodePathStart(codePath, node): void {
+    onCodePathStart(_codePath, node): void {
       const _d = debug.extend('onCodePathStart')
-
-      _d(`hasTopLevelUseServer: ${hasTopLevelUseServer}`)
+      _d('Running onCodePathStart...')
 
       if (hasTopLevelUseServer) {
         _d('Has top level "use server", no checks required')
         return
       }
 
-      _d('onCodePathStart: ===============')
+      _d(`node.type: ${node.type}`)
+
       if (
-        node.type === 'ArrowFunctionExpression' ||
-        node.type === 'FunctionExpression'
+        node.type !== 'ArrowFunctionExpression' &&
+        node.type !== 'FunctionExpression' &&
+        node.type !== 'FunctionDeclaration'
       ) {
-        if (node.body.type === 'BlockStatement') {
-          const literals: SimpleLiteral[] = node.body.body
-            .filter((item) => {
-              const isExpression = item.type === 'ExpressionStatement'
-              if (!isExpression) return false
+        return
+      }
 
-              const isLiteral = item.expression.type === 'Literal'
-
-              return isExpression && isLiteral
-            })
-            .map((item) => {
-              return item as ExpressionStatement
-            })
-            .map((item) => {
-              return item.expression as SimpleLiteral
-            })
-          _d(`Found ${literals.length} SimpleLiteral expressions`)
-
-          if (literals.length === 0) {
-            _d('Bailing, no literals found')
-
-            // Should report here
-            _d(
-              'Make a report to the context, no "use server" found in this arrow function expression',
-            )
-
-            const message =
-              'Arrow function statement is missing "use server" directive'
-            const report: Rule.ReportDescriptor = { node, message }
-            context.report(report)
-
-            return
-          }
-
-          const hasUseServer = literals[0].value === 'use server'
-
-          if (!hasUseServer) {
-            // report this to the context
-            _d('Report this statement as a problem')
-          }
+      _d(`node.body.type: ${node.body.type}`)
+      if (node.body.type === 'ObjectExpression' && !hasTopLevelUseServer) {
+        const report: Rule.ReportDescriptor = {
+          node,
+          message: getUseServerErrorMessage(node.type),
         }
+        context.report(report)
+
+        return
+      }
+
+      if (node.body.type !== 'BlockStatement') {
+        return
+      }
+
+      _d('Checking BlockStatement...')
+      const literals: SimpleLiteral[] = node.body.body
+        .filter((item) => {
+          const isExpression = item.type === 'ExpressionStatement'
+          if (!isExpression) return false
+
+          const isLiteral = item.expression.type === 'Literal'
+
+          return isExpression && isLiteral
+        })
+        .map((item) => {
+          return item as ExpressionStatement
+        })
+        .map((item) => {
+          return item.expression as SimpleLiteral
+        })
+      _d(`Found ${literals.length} SimpleLiteral expressions`)
+
+      const hasUseServer = literals?.[0]?.value === 'use server'
+      if (!hasTopLevelUseServer && !hasUseServer) {
+        // report this to the context
+        _d('Report this statement as a problem')
+        const report: Rule.ReportDescriptor = {
+          node,
+          message: getUseServerErrorMessage(node.type),
+        }
+        context.report(report)
+
+        return
       }
     },
   }
